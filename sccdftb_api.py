@@ -3,6 +3,19 @@ from datetime import datetime
 from uuid import uuid4
 from sccdftb_config import SCRATCH_DIR, CHARMM_EXE
 
+ATOMS = ("H", "C", "N", "O", "S", "P")
+
+
+def generate_atom_dict():
+
+    atom_dict = dict()
+
+    for atom in ATOMS:
+        atom_dict[atom] = 0
+
+    return atom_dict
+
+
 def get_time_string():
     d = datetime.now()
     return str(d).replace(" ","_")
@@ -29,7 +42,10 @@ def get_args():
     parser.add_argument("--minimize", "-m", action='store_true',
         help="Perform geometry optimization.")
 
-    parser.add_argument('--scf-tol', "-s" , action='store_const', const=1.0e-7,
+    parser.add_argument("--verbose", "-v", action='store_true',
+        help="Verbose run of CHARMM.")
+
+    parser.add_argument('--scf-tol', "-s" , action='store', const=None,
         help="SCF energy convergence criterion (default:  1e-7 Hartree).")
 
     parser.add_argument('--charge', "-c" , action='store_const', const=0,
