@@ -45,10 +45,13 @@ def get_args():
     parser.add_argument("--verbose", "-v", action='store_true',
         help="Verbose run of CHARMM.")
 
+    parser.add_argument("--clean-up", action='store_true',
+        help="Delete scratch files after completion.")
+
     parser.add_argument('--scf-tol', "-s" , action='store', const=None,
         help="SCF energy convergence criterion (default:  1e-7 Hartree).")
 
-    parser.add_argument('--charge', "-c" , action='store_const', const=0,
+    parser.add_argument('--charge', "-c" , action='store', const=None,
         help="Total charge of the system (default:  0 a.u.).")
 
 

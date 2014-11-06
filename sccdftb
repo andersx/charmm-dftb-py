@@ -26,6 +26,7 @@
 # For more information, please refer to <http://unlicense.org>
 
 import os
+import shutil
 
 from sccdftb_config import SCRATCH_DIR, CHARMM_EXE, PARTOP, SLKO_DIR, ZETA, HUBBARD
 from sccdftb_api import *
@@ -129,9 +130,9 @@ if __name__ == "__main__":
     inp_output += "open read card unit 10 name @partop/par_all27_prot_na.prm\n"
     inp_output += "read param card unit 10\n"
     inp_output += "close unit 10\n"
-    inp_output += "\n"
-    inp_output += "read rtf card append name @partop/top_all36_cgenff.rtf\n"
-    inp_output += "read para card append name @partop/par_all36_cgenff.prm\n"
+#    inp_output += "\n"
+#    inp_output += "read rtf card append name @partop/top_all36_cgenff.rtf\n"
+#    inp_output += "read para card append name @partop/par_all36_cgenff.prm\n"
     inp_output += "\n"
     inp_output += "read rtf card append name %s\n" % rtf_file
     inp_output += "\n"
@@ -142,16 +143,17 @@ if __name__ == "__main__":
     inp_output += "read coor unit 10 card append\n"
     inp_output += "close unit 10\n"
     inp_output += "\n"
-    inp_output += "open unit 3 name %s write form\n" % (scr_dir + "/molecule_charmm.psf")
-    inp_output += "write psf card unit 3\n"
-    inp_output += "\n"
-    inp_output += "open unit 3 name %s write form\n" % (scr_dir + "/molecule_charmm.crd")
-    inp_output += "write coor card unit 3\n"
-    inp_output += "\n"
-    inp_output += "nbonds  atom fshift cdie vdw vshift  -\n"
-    inp_output += "        cutnb 14.0 ctofnb 12.0 ctonnb 10.0 wmin 1.5 eps 1.0 -\n"
-    inp_output += "        inbfrq -1\n"
-    inp_output += "\n"
+    if args.clean_up is not True:
+        inp_output += "open unit 3 name %s write form\n" % (scr_dir + "/molecule_charmm.psf")
+        inp_output += "write psf card unit 3\n"
+        inp_output += "\n"
+        inp_output += "open unit 3 name %s write form\n" % (scr_dir + "/molecule_charmm.crd")
+        inp_output += "write coor card unit 3\n"
+        inp_output += "\n"
+#    inp_output += "nbonds  atom fshift cdie vdw vshift  -\n"
+#    inp_output += "       cutnb 14.0 ctofnb 12.0 ctonnb 10.0 wmin 1.5 eps 1.0 -\n"
+#    inp_output += "       inbfrq -1\n"
+#    inp_output += "\n"
     inp_output += "define qm sele all end\n"
     inp_output += "\n"
 
@@ -168,7 +170,7 @@ if __name__ == "__main__":
 
     charge = 0.0
     if args.charge is not None:
-        charge = args.charge
+        charge = float(args.charge)
     
     dispersion_correction = ""
 
@@ -269,8 +271,8 @@ if __name__ == "__main__":
         if "ENER QUANTM>" in line:
             energy = float(line.split()[2])
 
-        if "SCFConv" in line:
-            dipole = float(line.split()[6])
+        if "Dipol: |mu| =" in line:
+            dipole = float(line.split()[3])
 
     # Print resulting energy, dipole
     print "E = %15.5f kcal/mol    |mu| = %10.5f Debye" % (energy, dipole)
@@ -279,4 +281,6 @@ if __name__ == "__main__":
     if args.oxyz is not None:
         os.system("crd2xyz %s > %s " % (crd_opt, args.oxyz))
 
+    if args.clean_up:
+        shutil.rmtree(scr_dir)
 
