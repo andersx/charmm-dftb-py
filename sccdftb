@@ -34,9 +34,11 @@ if __name__ == "__main__":
 
     args = get_args()
 
+    # print args
+
     # create scrdir
     scr_dir = generate_scr_name()
-    scr_dir = "/home/andersx/scr/temp"
+    # scr_dir = "/home/andersx/scr/temp"
     try:
         os.mkdir(scr_dir)
     except:
@@ -107,7 +109,7 @@ if __name__ == "__main__":
         f.write(line)
     f.close()
 
-    print rtf_file
+    # print rtf_file
 
     # create geometry.inp
 
@@ -248,12 +250,33 @@ if __name__ == "__main__":
     work_dir = os.getcwd()
 
     os.chdir(scr_dir)
-    os.system(CHARMM_EXE + " < " + inp_file + " > output.log")
+
+    if args.verbose:
+        os.system(CHARMM_EXE + " < " + inp_file + " 2>&1 | tee output.log")
+    else:
+        os.system(CHARMM_EXE + " < " + inp_file + " > output.log")
 
     os.chdir(work_dir)
+    
+    f = open(scr_dir + "/output.log")
+    output_lines = f.readlines()
+    f.close()
+
+    energy = 0.0
+    dipole = 0.0
+
+    for line in output_lines:
+        if "ENER QUANTM>" in line:
+            energy = float(line.split()[2])
+
+        if "SCFConv" in line:
+            dipole = float(line.split()[6])
 
     # Print resulting energy, dipole
+    print "E = %15.5f kcal/mol    |mu| = %10.5f Debye" % (energy, dipole)
 
     # generate+copy output xyz
+    if args.oxyz is not None:
+        os.system("crd2xyz %s > %s " % (crd_opt, args.oxyz))
 
-    print args 
+
