@@ -1,11 +1,9 @@
-
-import os
-import shutil
-
+from os import getcwd, chdir, mkdir, system
+from shutil import rmtree
 from argparse import ArgumentParser
 from datetime import datetime
 from uuid import uuid4
-from sccdftb_config import SCRATCH_DIR, CHARMM_EXE, PARTOP, SLKO_DIR, ZETA, HUBBARD
+from sccdftb_config import SCRATCH_DIR, CHARMM_EXE, SLKO_DIR, ZETA, HUBBARD
 
 
 ATOMS = ("H", "C", "N", "O", "S", "P")
@@ -76,7 +74,7 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     scr_dir = generate_scr_name()
     # scr_dir = "/home/andersx/scr/temp"
     try:
-        os.mkdir(scr_dir)
+        mkdir(scr_dir)
     except:
         pass
 
@@ -109,7 +107,7 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
 
         atom_count[atom_type] += 1
 
-        crd_string = "\n %4i    1 DFTB %1s%-2i %10.5f %9.5f %9.5f SOLV 1      0.00000" % (i + 1,  atom_type, atom_count[atom_type], x, y, z)
+        crd_string = "\n %4i    1 DFTB %1s%-2i %10.5f %9.5f %9.5f DFTB 1      0.00000" % (i + 1,  atom_type, atom_count[atom_type], x, y, z)
 
         crd_output += crd_string
 
@@ -123,7 +121,15 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
 
     rtf_file = scr_dir + "/molecule.rtf"
     
-    rtf_output  = "DEFA FIRS NONE LAST NONE\n"
+    rtf_output = "31  1\n"
+    rtf_output += "\n"
+    rtf_output += "MASS     1 H      1.00800 H ! polar H\n"
+    rtf_output += "MASS     2 C     12.01100 C ! carbonyl C, peptide backbone\n"
+    rtf_output += "MASS     3 N     14.00700 N ! proline N\n"
+    rtf_output += "MASS     4 O     15.99900 O ! carbonyl oxygen\n"
+    rtf_output += "MASS     5 S     32.06000 S ! sulphur\n"
+    rtf_output += "\n"
+    rtf_output += "DEFA FIRS NONE LAST NONE\n"
     rtf_output += "AUTO ANGLES DIHE\n"
     rtf_output += "\n"
     rtf_output += "RESI DFTB        0.00\n"
@@ -136,6 +142,8 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
         for i in range(n):
             rtf_output += "ATOM %1s%-3i  %1s     0.00\n" % (atom, i+1, atom)
  
+    rtf_output += "\n"
+    rtf_output += "END"
 
     f = open(rtf_file, "w")
     for line in rtf_output:
@@ -151,22 +159,10 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     inp_output += "\n"
     inp_output += "bomb -5\n"
     inp_output += "wrnlev -5\n"
-    inp_output += "set partop %s\n" % PARTOP
     inp_output += "\n"
-    inp_output += "!Read topology\n"
-    inp_output += "open read card unit 10 name @partop/top_all27_prot_na.rtf\n"
+    inp_output += "open read card unit 10 name %s\n" %  rtf_file
     inp_output += "read rtf card unit 10\n"
     inp_output += "close unit 10\n"
-    inp_output += "\n"
-    inp_output += "!read parameters\n"
-    inp_output += "open read card unit 10 name @partop/par_all27_prot_na.prm\n"
-    inp_output += "read param card unit 10\n"
-    inp_output += "close unit 10\n"
-#    inp_output += "\n"
-#    inp_output += "read rtf card append name @partop/top_all36_cgenff.rtf\n"
-#    inp_output += "read para card append name @partop/par_all36_cgenff.prm\n"
-    inp_output += "\n"
-    inp_output += "read rtf card append name %s\n" % rtf_file
     inp_output += "\n"
     inp_output += "read sequence dftb 1\n"
     inp_output += "generate dftb setup noangle nodihedral\n"
@@ -272,16 +268,16 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
 
     # run charmm
 
-    work_dir = os.getcwd()
+    work_dir = getcwd()
 
-    os.chdir(scr_dir)
+    chdir(scr_dir)
 
     if verbose:
-        os.system(CHARMM_EXE + " < " + inp_file + " 2>&1 | tee output.log")
+        system(CHARMM_EXE + " < " + inp_file + " 2>&1 | tee output.log")
     else:
-        os.system(CHARMM_EXE + " < " + inp_file + " > output.log")
+        system(CHARMM_EXE + " < " + inp_file + " > output.log")
 
-    os.chdir(work_dir)
+    chdir(work_dir)
     
     f = open(scr_dir + "/output.log")
     output_lines = f.readlines()
@@ -297,14 +293,11 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
         if "Dipol: |mu| =" in line:
             dipole = float(line.split()[3])
 
-    # Print resulting energy, dipole
-    print "E = %15.5f kcal/mol    |mu| = %10.5f Debye" % (energy, dipole)
-
     # generate+copy output xyz
     if oxyz is not None:
-        os.system("crd2xyz %s > %s " % (crd_opt, oxyz))
+        system("crd2xyz %s > %s " % (crd_opt, oxyz))
 
     if clean_up:
-        shutil.rmtree(scr_dir)
+        rmtree(scr_dir)
 
     return energy, dipole

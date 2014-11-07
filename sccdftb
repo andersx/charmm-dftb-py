@@ -35,3 +35,8 @@ if __name__ == "__main__":
         charge=args.charge, d2=args.d2, d3=args.d3, cpe=args.cpe,
         verbose=args.verbose, minimize=args.minimize, 
         scf_tol=args.scf_tol, oxyz=args.oxyz)
+
+
+    # Print resulting energy, dipole
+    print "E = %15.5f kcal/mol    |mu| = %10.5f Debye" % (energy, dipole)
+

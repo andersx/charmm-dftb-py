@@ -4,9 +4,6 @@ SCRATCH_DIR = "/home/andersx/scr"
 # Executable for CHARMM
 CHARMM_EXE = "/home/andersx/dev/charmm_cpe/exec/gnu/charmm"
 
-# Parameter and topology file directory for CHARMM
-PARTOP = "/home/andersx/projects/partop"
-
 # Directory for the Slater-Koster files
 SLKO_DIR = "/home/andersx/dev/slko-3OB_distribute130926"
 
