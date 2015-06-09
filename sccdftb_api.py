@@ -3,15 +3,11 @@ from shutil import rmtree
 from argparse import ArgumentParser
 from datetime import datetime
 from uuid import uuid4
-<<<<<<< HEAD
-from sccdftb_config import SCRATCH_DIR, CHARMM_EXE, SLKO_DIR, ZETA, HUBBARD, HUBBARD_LDEP, CRD2XYZ_EXE
-
-=======
+from sccdftb_config import HUBBARD_LDEP, CRD2XYZ_EXE
 from sccdftb_config import SCRATCH_DIR, D3H4_BIN_DIR, CHARMM_EXE
 from sccdftb_config import SLKO_DIR, ZETA, HUBBARD
 from numpy import float64
 import numpy as np
->>>>>>> origin
 
 ATOMS = ("H", "C", "N", "O", "S", "P", "CU")
 
@@ -72,26 +68,23 @@ def get_args():
     parser.add_argument('--charge', "-c" , action='store', default=0.0,
         help="Total charge of the system (default:  0 a.u.).")
 
-<<<<<<< HEAD
     parser.add_argument('--l-dependent', "-ldep" , action='store_true', default=False,
         help="Enable angular momentum-dependent Hubbard derivatives (only required for Cu)")
-=======
+
     parser.add_argument('--mixer', action='store', default=1,
         help="Mixer (default:  1).")
->>>>>>> origin
 
     args = parser.parse_args()
 
     return args
 
 def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
-<<<<<<< HEAD
-        cpe=False, verbose=False, minimize=False, scf_tol=1e-7,
-        oxyz=None, ldep=False):
-=======
-        d3h4=False, cpe=False, verbose=False, minimize=False, scf_tol=1e-7,
-        oxyz=None, mixer=1):
->>>>>>> origin
+    cpe=False, verbose=False, minimize=False, scf_tol=1e-7, d3h4=False,
+    oxyz=None, ldep=False, mixer=1):
+
+    #d3h4=False, cpe=False, verbose=False, minimize=False, scf_tol=1e-7,
+    # oxyz=None, mixer=1):
+    #>>>>>>> origin
 
     scr_dir = generate_scr_name()
     # scr_dir = "/home/andersx/scr/temp"
@@ -242,21 +235,21 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
         cpe_correction = "cpe"
 
     inp_output += "sccdftb remove sele qm end temp 0.0 scftol " +  str(scf_tol) + " -\n"
-<<<<<<< HEAD
-    inp_output += "        chrg %2.1f d3rd hbon mixe 1 %s %s %s\n" % (charge, cpe_correction, dispersion_correction, ldep_output)
-=======
-    inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s\n" % (float(charge), int(mixer), cpe_correction, dispersion_correction)
->>>>>>> origin
+    #<<<<<<< HEAD
+    inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s %s\n" % (float(charge), int(mixer),  cpe_correction, dispersion_correction, ldep_output)
+    # =======
+    #inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s\n" % (float(charge), int(mixer), cpe_correction, dispersion_correction)
+    #>>>>>>> origin
 
 
     if minimize:
 
         inp_output += "\n"
-<<<<<<< HEAD
+        #<<<<<<< HEAD
         inp_output += "mini abnr nstep 1000\n"
-=======
-        inp_output += "mini powe nstep 1000 tolg 5.0e-4\n"
->>>>>>> origin
+        #=======
+        #inp_output += "mini powe nstep 1000 tolg 5.0e-4\n"
+        #>>>>>>> origin
         inp_output += "\n"
 
     crd_opt = scr_dir + "/molecule_optimized.crd"

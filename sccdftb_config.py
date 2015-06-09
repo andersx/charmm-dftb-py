@@ -2,7 +2,7 @@
 SCRATCH_DIR = "/home/andersx/scr"
 
 # Executable for CHARMM
-CHARMM_EXE = "/home/andersx/dev/charmm_d3/exec/gnu/charmm"
+CHARMM_EXE = "/home/andersx/dev/charmm_cpe/exec/gnu/charmm"
 
 # Executable for CHARMM
 CRD2XYZ_EXE = "/home/andersx/charmm-dftb-py/crd2xyz"

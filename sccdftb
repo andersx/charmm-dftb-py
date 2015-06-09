@@ -31,17 +31,10 @@ if __name__ == "__main__":
 
     args = get_args()
 
-<<<<<<< HEAD
-    energy, dipole = run_charmm(args.ixyz, clean_up=args.clean_up, 
-        charge=float(args.charge), d2=args.d2, d3=args.d3, cpe=args.cpe,
-        verbose=args.verbose, minimize=args.minimize, 
-        scf_tol=args.scf_tol, oxyz=args.oxyz, ldep=args.l_dependent)
-=======
     energy, dipole, scf_iters = run_charmm(args.ixyz, clean_up=args.clean_up, 
         charge=args.charge, d2=args.d2, d3=args.d3, d3h4=args.d3h4, 
         cpe=args.cpe, verbose=args.verbose, minimize=args.minimize, 
-        scf_tol=args.scf_tol, oxyz=args.oxyz, mixer=args.mixer)
->>>>>>> origin
+        scf_tol=args.scf_tol, oxyz=args.oxyz, mixer=args.mixer, ldep=args.l_dependent)
 
 
     # Print resulting energy, dipole
