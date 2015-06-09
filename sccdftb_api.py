@@ -69,7 +69,10 @@ def get_args():
         help="Total charge of the system (default:  0 a.u.).")
 
     parser.add_argument('--l-dependent', "-ldep" , action='store_true', default=False,
-        help="Enable angular momentum-dependent Hubbard derivatives (only required for Cu)")
+            help="Enable angular momentum-dependent Hubbard derivatives - required for Cu.")
+
+    parser.add_argument('--polarizability', "-pol" , action='store_true', default=False,
+        help="Calculate polarizability via finite differences.")
 
     parser.add_argument('--mixer', action='store', default=1,
         help="Mixer (default:  1).")
@@ -80,7 +83,7 @@ def get_args():
 
 def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     cpe=False, verbose=False, minimize=False, scf_tol=1e-7, d3h4=False,
-    oxyz=None, ldep=False, mixer=1):
+    oxyz=None, ldep=False, mixer=1, polar=False):
 
     #d3h4=False, cpe=False, verbose=False, minimize=False, scf_tol=1e-7,
     # oxyz=None, mixer=1):
@@ -229,6 +232,11 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     if ldep:
         ldep_output = "ldep"
 
+    polar_string = ""
+
+    if polar:
+        polar_string = "polar scfc coq"
+
     cpe_correction = ""
 
     if cpe:
@@ -236,7 +244,7 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
 
     inp_output += "sccdftb remove sele qm end temp 0.0 scftol " +  str(scf_tol) + " -\n"
     #<<<<<<< HEAD
-    inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s %s\n" % (float(charge), int(mixer),  cpe_correction, dispersion_correction, ldep_output)
+    inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s %s %s\n" % (float(charge), int(mixer),  cpe_correction, dispersion_correction, ldep_output, polar_string)
     # =======
     #inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s\n" % (float(charge), int(mixer), cpe_correction, dispersion_correction)
     #>>>>>>> origin
@@ -326,7 +334,8 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     energy = 0.0
     dipole = 0.0
     scf_iterations = 0
-
+    isotropic = 0.0
+    anisotropic = 0.0
     for line in output_lines:
         if "Internal energy: Ui =" in line:
             energy = float(line.split()[4])
@@ -336,6 +345,12 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
 
         if "EGLCAO> SCF Iterations:" in line:
             scf_iterations = int(line.split()[3])
+
+        if "isotropic" in line and "anisotropic" not in line:
+            isotropic = float(line.split()[3])
+
+        if "anisotropic" in line:
+            anisotropic = float(line.split()[3])
 
     if d3h4:
 
@@ -370,5 +385,9 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     if clean_up:
         rmtree(scr_dir)
 
-    return energy, dipole, scf_iterations
+
+    if polar: 
+        return energy, dipole, scf_iterations, isotropic, anisotropic
+    else:
+        return energy, dipole, scf_iterations
 

@@ -31,12 +31,29 @@ if __name__ == "__main__":
 
     args = get_args()
 
-    energy, dipole, scf_iters = run_charmm(args.ixyz, clean_up=args.clean_up, 
-        charge=args.charge, d2=args.d2, d3=args.d3, d3h4=args.d3h4, 
-        cpe=args.cpe, verbose=args.verbose, minimize=args.minimize, 
-        scf_tol=args.scf_tol, oxyz=args.oxyz, mixer=args.mixer, ldep=args.l_dependent)
+    if args.polarizability:
+
+        energy, dipole, scf_iters, isotropic, anisotropic = run_charmm(args.ixyz, 
+            clean_up=args.clean_up, 
+            charge=args.charge, d2=args.d2, d3=args.d3, d3h4=args.d3h4, 
+            cpe=args.cpe, verbose=args.verbose, minimize=args.minimize, 
+            scf_tol=args.scf_tol, oxyz=args.oxyz, mixer=args.mixer, ldep=args.l_dependent,
+            polar=args.polarizability)
 
 
-    # Print resulting energy, dipole
-    print "E = %22.12f kcal/mol    |mu| = %20.16f Debye   %i SCF iterations" % (energy, dipole, scf_iters)
+        # Print resulting energy, dipole
+        print "E = %22.12f kcal/mol    |mu| = %20.16f Debye   %i SCF iterations" \
+                % (energy, dipole, scf_iters)
+        print "a_iso = %22.12f    a_aniso = %22.12f" \
+                % (isotropic, anisotropic)
+    else:
+        energy, dipole, scf_iters = run_charmm(args.ixyz, clean_up=args.clean_up, 
+            charge=args.charge, d2=args.d2, d3=args.d3, d3h4=args.d3h4, 
+            cpe=args.cpe, verbose=args.verbose, minimize=args.minimize, 
+            scf_tol=args.scf_tol, oxyz=args.oxyz, mixer=args.mixer, ldep=args.l_dependent)
+
+
+        # Print resulting energy, dipole
+        print "E = %22.12f kcal/mol    |mu| = %20.16f Debye   %i SCF iterations" % \
+                (energy, dipole, scf_iters)
 
