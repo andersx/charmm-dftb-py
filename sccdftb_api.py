@@ -3,8 +3,10 @@ from shutil import rmtree
 from argparse import ArgumentParser
 from datetime import datetime
 from uuid import uuid4
-from sccdftb_config import SCRATCH_DIR, CHARMM_EXE, SLKO_DIR, ZETA, HUBBARD
-
+from sccdftb_config import SCRATCH_DIR, D3H4_BIN_DIR, CHARMM_EXE
+from sccdftb_config import SLKO_DIR, ZETA, HUBBARD
+from numpy import float64
+import numpy as np
 
 ATOMS = ("H", "C", "N", "O", "S", "P")
 
@@ -44,6 +46,9 @@ def get_args():
     parser.add_argument('--d3', '-d3', action='store_true', default=False,
         help="Add Grimmes's three-body D3(BJ) dispersion correction.")
 
+    parser.add_argument('--d3h4', "-d3h4" , action='store_true', default=False,
+        help="Add Hobza's DFTB-D3H4 correction.")
+
     parser.add_argument('--cpe', '-cpe', action='store_true', default=False,
         help="Use Chemical Potential Equalization correction.")
 
@@ -62,14 +67,16 @@ def get_args():
     parser.add_argument('--charge', "-c" , action='store', default=0.0,
         help="Total charge of the system (default:  0 a.u.).")
 
+    parser.add_argument('--mixer', action='store', default=1,
+        help="Mixer (default:  1).")
 
     args = parser.parse_args()
 
     return args
 
 def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
-        cpe=False, verbose=False, minimize=False, scf_tol=1e-7,
-        oxyz=None):
+        d3h4=False, cpe=False, verbose=False, minimize=False, scf_tol=1e-7,
+        oxyz=None, mixer=1):
 
     scr_dir = generate_scr_name()
     # scr_dir = "/home/andersx/scr/temp"
@@ -209,13 +216,13 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
         cpe_correction = "cpe"
 
     inp_output += "sccdftb remove sele qm end temp 0.0 scftol " +  str(scf_tol) + " -\n"
-    inp_output += "        chrg %2.1f d3rd hbon mixe 1 %s %s\n" % (charge, cpe_correction, dispersion_correction)
+    inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s\n" % (float(charge), int(mixer), cpe_correction, dispersion_correction)
 
 
     if minimize:
 
         inp_output += "\n"
-        inp_output += "mini powe nstep 1000\n"
+        inp_output += "mini powe nstep 1000 tolg 5.0e-4\n"
         inp_output += "\n"
 
     crd_opt = scr_dir + "/molecule_optimized.crd"
@@ -285,13 +292,43 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
 
     energy = 0.0
     dipole = 0.0
+    scf_iterations = 0
 
     for line in output_lines:
-        if "ENER QUANTM>" in line:
-            energy = float(line.split()[2])
+        if "Internal energy: Ui =" in line:
+            energy = float(line.split()[4])
 
         if "Dipol: |mu| =" in line:
             dipole = float(line.split()[3])
+
+        if "EGLCAO> SCF Iterations:" in line:
+            scf_iterations = int(line.split()[3])
+
+    if d3h4:
+
+        chdir(scr_dir)
+
+        system(D3H4_BIN_DIR + "/dftd3 " + work_dir + "/" + ixyz + " -func dftb3-d3h4 -zero " 
+                + " > d3.log")
+        f = open(scr_dir + "/d3.log")
+        output_lines = f.readlines()
+        f.close()
+
+        for line in output_lines:
+            if "Edisp /kcal,au:" in line:
+                energy += float(line.split()[2])
+
+        system(D3H4_BIN_DIR + "/h4-dftb3 < " + work_dir + "/" + ixyz + " > h4.log")
+        f = open(scr_dir + "/h4.log")
+        output_lines = f.readlines()
+        f.close()
+
+        for line in output_lines:
+            if "Total:" in line:
+                energy += float(line.split()[1])
+
+        chdir(work_dir)
+
 
     # generate+copy output xyz
     if oxyz is not None:
@@ -300,4 +337,5 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     if clean_up:
         rmtree(scr_dir)
 
-    return energy, dipole
+    return energy, dipole, scf_iterations
+

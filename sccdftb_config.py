@@ -4,6 +4,9 @@ SCRATCH_DIR = "/home/andersx/scr"
 # Executable for CHARMM
 CHARMM_EXE = "/home/andersx/dev/charmm_cpe/exec/gnu/charmm"
 
+# This directory
+D3H4_BIN_DIR = "/home/andersx/dev/charmm-dftb-py/d3h4_bin"
+
 # Directory for the Slater-Koster files
 SLKO_DIR = "/home/andersx/dev/slko-3OB_distribute130926"
 
