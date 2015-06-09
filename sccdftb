@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/home/andersx/bin/python2.7
 #
 # This is free and unencumbered software released into the public domain.
 #
@@ -32,9 +32,9 @@ if __name__ == "__main__":
     args = get_args()
 
     energy, dipole = run_charmm(args.ixyz, clean_up=args.clean_up, 
-        charge=args.charge, d2=args.d2, d3=args.d3, cpe=args.cpe,
+        charge=float(args.charge), d2=args.d2, d3=args.d3, cpe=args.cpe,
         verbose=args.verbose, minimize=args.minimize, 
-        scf_tol=args.scf_tol, oxyz=args.oxyz)
+        scf_tol=args.scf_tol, oxyz=args.oxyz, ldep=args.l_dependent)
 
 
     # Print resulting energy, dipole

@@ -3,10 +3,10 @@ from shutil import rmtree
 from argparse import ArgumentParser
 from datetime import datetime
 from uuid import uuid4
-from sccdftb_config import SCRATCH_DIR, CHARMM_EXE, SLKO_DIR, ZETA, HUBBARD
+from sccdftb_config import SCRATCH_DIR, CHARMM_EXE, SLKO_DIR, ZETA, HUBBARD, HUBBARD_LDEP, CRD2XYZ_EXE
 
 
-ATOMS = ("H", "C", "N", "O", "S", "P")
+ATOMS = ("H", "C", "N", "O", "S", "P", "CU")
 
 
 def generate_atom_dict():
@@ -62,6 +62,8 @@ def get_args():
     parser.add_argument('--charge', "-c" , action='store', default=0.0,
         help="Total charge of the system (default:  0 a.u.).")
 
+    parser.add_argument('--l-dependent', "-ldep" , action='store_true', default=False,
+        help="Enable angular momentum-dependent Hubbard derivatives (only required for Cu)")
 
     args = parser.parse_args()
 
@@ -69,7 +71,7 @@ def get_args():
 
 def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
         cpe=False, verbose=False, minimize=False, scf_tol=1e-7,
-        oxyz=None):
+        oxyz=None, ldep=False):
 
     scr_dir = generate_scr_name()
     # scr_dir = "/home/andersx/scr/temp"
@@ -107,7 +109,11 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
 
         atom_count[atom_type] += 1
 
-        crd_string = "\n %4i    1 DFTB %1s%-2i %10.5f %9.5f %9.5f DFTB 1      0.00000" % (i + 1,  atom_type, atom_count[atom_type], x, y, z)
+        atom_spec = "%s%i" % (atom_type, atom_count[atom_type])
+        if len(atom_spec) < 3:
+            atom_spec += " "
+
+        crd_string = "\n %4i    1 DFTB %3s %10.5f %9.5f %9.5f DFTB 1      0.00000" % (i + 1,atom_spec, x, y, z)
 
         crd_output += crd_string
 
@@ -127,7 +133,9 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     rtf_output += "MASS     2 C     12.01100 C ! carbonyl C, peptide backbone\n"
     rtf_output += "MASS     3 N     14.00700 N ! proline N\n"
     rtf_output += "MASS     4 O     15.99900 O ! carbonyl oxygen\n"
-    rtf_output += "MASS     5 S     32.06000 S ! sulphur\n"
+    rtf_output += "MASS    15 P     30.97379 P ! phosphorous\n"
+    rtf_output += "MASS    16 S     32.06000 S ! sulphur\n"
+    rtf_output += "MASS    29 CU    63.54600 CU ! copper\n"
     rtf_output += "\n"
     rtf_output += "DEFA FIRS NONE LAST NONE\n"
     rtf_output += "AUTO ANGLES DIHE\n"
@@ -203,19 +211,24 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     if d3:
         dispersion_correction = "threebod"
 
+
+    ldep_output = ""
+    if ldep:
+        ldep_output = "ldep"
+
     cpe_correction = ""
 
     if cpe:
         cpe_correction = "cpe"
 
     inp_output += "sccdftb remove sele qm end temp 0.0 scftol " +  str(scf_tol) + " -\n"
-    inp_output += "        chrg %2.1f d3rd hbon mixe 1 %s %s\n" % (charge, cpe_correction, dispersion_correction)
+    inp_output += "        chrg %2.1f d3rd hbon mixe 1 %s %s %s\n" % (charge, cpe_correction, dispersion_correction, ldep_output)
 
 
     if minimize:
 
         inp_output += "\n"
-        inp_output += "mini powe nstep 1000\n"
+        inp_output += "mini abnr nstep 1000\n"
         inp_output += "\n"
 
     crd_opt = scr_dir + "/molecule_optimized.crd"
@@ -253,9 +266,15 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
 
                 dat_output += "'%s/%s%s.spl'\n" % (SLKO_DIR, atom1.lower(), atom2.lower())
 
+    HUBBARD_OUTPUT = dict()
+    if ldep:
+        HUBBARD_OUTPUT = HUBBARD_LDEP
+    else:
+        HUBBARD_OUTPUT = HUBBARD
+
     for atom in ATOMS:
         if atom_count[atom] > 0:
-            dat_output += "'%s' %1.5f\n" % (atom.lower(), HUBBARD[atom])
+            dat_output += "'%s' %s\n" % (atom.lower(), HUBBARD_OUTPUT[atom])
 
     dat_output += str(ZETA)
 
@@ -295,7 +314,7 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
 
     # generate+copy output xyz
     if oxyz is not None:
-        system("crd2xyz %s > %s " % (crd_opt, oxyz))
+        system("%s %s > %s " % (CRD2XYZ_EXE, crd_opt, oxyz))
 
     if clean_up:
         rmtree(scr_dir)
