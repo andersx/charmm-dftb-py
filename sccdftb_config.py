@@ -7,6 +7,9 @@ CHARMM_EXE = "/home/andersx/dev/charmm_d3/exec/gnu/charmm"
 # Executable for CHARMM
 CRD2XYZ_EXE = "/home/andersx/charmm-dftb-py/crd2xyz"
 
+# This directory
+D3H4_BIN_DIR = "/home/andersx/dev/charmm-dftb-py/d3h4_bin"
+
 # Directory for the Slater-Koster files
 SLKO_DIR = "/home/andersx/dev/slko-3OB_distribute130926"
 
