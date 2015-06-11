@@ -50,7 +50,8 @@ if __name__ == "__main__":
         energy, dipole, scf_iters = run_charmm(args.ixyz, clean_up=args.clean_up, 
             charge=args.charge, d2=args.d2, d3=args.d3, d3h4=args.d3h4, 
             cpe=args.cpe, verbose=args.verbose, minimize=args.minimize, 
-            scf_tol=args.scf_tol, oxyz=args.oxyz, mixer=args.mixer, ldep=args.l_dependent)
+            scf_tol=args.scf_tol, oxyz=args.oxyz, mixer=args.mixer, ldep=args.l_dependent,
+            spin=args.spin)
 
 
         # Print resulting energy, dipole

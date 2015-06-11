@@ -1,0 +1,33 @@
+#!/usr/bin/python
+import sys
+import string
+
+NUMBERS = "0123456789"
+
+f = open(sys.argv[1])
+lines = f.readlines()
+f.close()
+
+n = 0
+
+output = ""
+
+for line in lines[4:]:
+
+    tokens = string.split(line)
+    if  tokens[3][1] in NUMBERS:
+        name = tokens[3][0] 
+    else:
+        name = tokens[3][0:2]
+
+    x = float(tokens[4])
+    y = float(tokens[5])
+    z = float(tokens[6])
+
+
+    output += "\n %-2s       %14.10f   %14.10f   %14.10f" % (name, x, y, z)
+    n += 1
+
+output = str(n) + "\n" + output
+
+print output

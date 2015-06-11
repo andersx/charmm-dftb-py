@@ -5,7 +5,7 @@ from datetime import datetime
 from uuid import uuid4
 from sccdftb_config import HUBBARD_LDEP, CRD2XYZ_EXE
 from sccdftb_config import SCRATCH_DIR, D3H4_BIN_DIR, CHARMM_EXE
-from sccdftb_config import SLKO_DIR, ZETA, HUBBARD
+from sccdftb_config import SLKO_DIR, ZETA, HUBBARD, SPIN_VAL
 from numpy import float64
 import numpy as np
 
@@ -77,17 +77,21 @@ def get_args():
     parser.add_argument('--mixer', action='store', default=1,
         help="Mixer (default:  1).")
 
+    parser.add_argument('--spin', "-spin" , action='store', default=0.0,
+        help="Number of unpaired electrons (default=0).")
+
     args = parser.parse_args()
 
     return args
 
 def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     cpe=False, verbose=False, minimize=False, scf_tol=1e-7, d3h4=False,
-    oxyz=None, ldep=False, mixer=1, polar=False):
+    oxyz=None, ldep=False, mixer=1, polar=False, spin=0.0):
 
-    #d3h4=False, cpe=False, verbose=False, minimize=False, scf_tol=1e-7,
-    # oxyz=None, mixer=1):
-    #>>>>>>> origin
+    spinpol = False
+
+    if abs(float(spin)) > 0.001:
+        spinpol = True
 
     scr_dir = generate_scr_name()
     # scr_dir = "/home/andersx/scr/temp"
@@ -146,9 +150,9 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     rtf_output = "31  1\n"
     rtf_output += "\n"
     rtf_output += "MASS     1 H      1.00800 H ! polar H\n"
-    rtf_output += "MASS     2 C     12.01100 C ! carbonyl C, peptide backbone\n"
-    rtf_output += "MASS     3 N     14.00700 N ! proline N\n"
-    rtf_output += "MASS     4 O     15.99900 O ! carbonyl oxygen\n"
+    rtf_output += "MASS     6 C     12.01100 C ! carbonyl C, peptide backbone\n"
+    rtf_output += "MASS     7 N     14.00700 N ! proline N\n"
+    rtf_output += "MASS     8 O     15.99900 O ! carbonyl oxygen\n"
     rtf_output += "MASS    15 P     30.97379 P ! phosphorous\n"
     rtf_output += "MASS    16 S     32.06000 S ! sulphur\n"
     rtf_output += "MASS    29 CU    63.54600 CU ! copper\n"
@@ -242,9 +246,13 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
     if cpe:
         cpe_correction = "cpe"
 
+    spin_string = ""
+    if spinpol:
+        spin_string = "unpe %2.1f" % float(spin)
+
     inp_output += "sccdftb remove sele qm end temp 0.0 scftol " +  str(scf_tol) + " -\n"
     #<<<<<<< HEAD
-    inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s %s %s\n" % (float(charge), int(mixer),  cpe_correction, dispersion_correction, ldep_output, polar_string)
+    inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s %s %s %s\n" % (float(charge), int(mixer),  cpe_correction, dispersion_correction, ldep_output, polar_string, spin_string)
     # =======
     #inp_output += "        chrg %2.1f d3rd hbon mixe %i %s %s\n" % (float(charge), int(mixer), cpe_correction, dispersion_correction)
     #>>>>>>> origin
@@ -294,6 +302,12 @@ def run_charmm(ixyz, clean_up=False, charge=0.0, d2=False, d3=False,
             if atom_count[atom1] > 0 and atom_count[atom2] > 0:
 
                 dat_output += "'%s/%s%s.spl'\n" % (SLKO_DIR, atom1.lower(), atom2.lower())
+
+    if spinpol:
+        for atom in ATOMS:
+            if atom_count[atom] > 0:
+                dat_output += "%s\n" % SPIN_VAL[atom]
+
 
     HUBBARD_OUTPUT = dict()
     if ldep:
